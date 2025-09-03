@@ -17,11 +17,7 @@ Built using **LangChain, FAISS, and Google Generative AI**.
 
 ## 📹 Demo  
 
-https://github.com/vijaypatange21/Ask_your_pdf/blob/main/pdf%20summariser.mp4  
-
-> 🎥 Replace the above link with your uploaded GitHub asset or YouTube link.  
-
----
+https://github.com/vijaypatange21/Ask_your_pdf/blob/main/pdf%20summariser%20video.mp4
 
 ## ⚙️ Installation  
 
