@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
 import streamlit as st
 from PyPDF2 import PdfReader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chains import RetrievalQA
+# from langchain_community.llms import Ollama
 
 import asyncio
 try:
@@ -12,6 +14,12 @@ try:
 except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
+@st.cache_resource
+def create_vectorstore(chunks):
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+    return FAISS.from_texts(chunks, embeddings)
 
 def main():
     load_dotenv()
@@ -37,21 +45,51 @@ def main():
         chunks = text_splitter.split_text(text)
         
         # Embeddings with Gemini
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        knowledge_base = FAISS.from_texts(chunks, embeddings)
+        # embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        knowledge_base = create_vectorstore(chunks)
         
         # Ask question
         user_question = st.text_input("Ask a question about your PDF:")
         if user_question:
-            docs = knowledge_base.similarity_search(user_question)
+            # docs = knowledge_base.similarity_search(user_question)
             
             # Gemini LLM
             llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
-            chain = load_qa_chain(llm, chain_type="stuff")
+            # llm = Ollama(model="llama3.2")
+            chain = RetrievalQA.from_chain_type(
+                llm=llm,
+                chain_type="stuff",
+                retriever=knowledge_base.as_retriever(search_kwargs={"k": 3})
+            )
             
-            response = chain.run(input_documents=docs, question=user_question)
+            response = chain.run(user_question)
             st.subheader("Answer:")
             st.write(response)
+        # Footer GitHub Link (Bottom Right Corner)
+    st.markdown(
+        """
+        <style>
+        .github-corner {
+            position: fixed;
+            bottom: 10px;
+            right: 15px;
+            font-size: 14px;
+        }
+        .github-corner a {
+            text-decoration: none;
+            color: #6c63ff;
+            font-weight: bold;
+        }
+        </style>
+        <div class="github-corner">
+            <a href="https://github.com/vijaypatange21/Ask_your_pdf" target="_blank">
+                🔗 View on GitHub
+            </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 if __name__ == '__main__':
     main()
