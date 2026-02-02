@@ -14,7 +14,7 @@ try:
 except RuntimeError:
     asyncio.set_event_loop(asyncio.new_event_loop())
 
-@st.cache_resource
+@st.cache_resource(show_spinner="Processing...")
 def create_vectorstore(chunks):
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
